@@ -1,0 +1,7 @@
+CompileFlags:
+  CompilationDatabase: build/
+  Remove:
+    - -mno-direct-extern-access
+
+Completion:
+  HeaderInsertion: Never
