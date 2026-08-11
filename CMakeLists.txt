@@ -19,6 +19,12 @@ qt_add_executable(monch
   src/main.cpp
   src/ThemeParser.cpp
   src/ThemeParser.h
+  src/Monitor.cpp
+  src/Monitor.h
+  src/MonitorModel.cpp
+  src/MonitorModel.h
+  src/IPC.cpp
+  src/IPC.h
 )
 
 qt_add_qml_module(monch

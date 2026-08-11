@@ -10,16 +10,59 @@ ApplicationWindow {
 
     color: Theme ? Qt.alpha(Theme.surface, 1.0) : "black"
 
+    Rectangle {
+        id: monitorsContainer
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.left: parent.left
+        anchors.bottom: monchText.top
+        anchors.margins: 8
+        radius: 4
+        color: Theme ? Theme.surface_container : "black"
+        Rectangle {
+            width: 160
+            height: 90
+            radius: 4
+            color: Theme ? Theme.surface_container_low : "black"
+            Text {
+                anchors.centerIn: parent
+                font.family: "Varela Round"
+                font.pixelSize: 12
+                text: "Monitor 1"
+                color: Theme ? Theme.on_surface : "black"
+            } 
+            MouseArea {
+                anchors.fill: parent
+                drag.target: parent
+                drag.minimumX: 0
+                drag.minimumY: 0
+                drag.maximumX: monitorsContainer.width - parent.width
+                drag.maximumY: monitorsContainer.height - parent.height
+            }
+        }
+    }
+    
+    
+
     Text {
-        anchors.centerIn: parent
-        text: ""
-        color: "#cdd6f4"
+        id: monchText
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: versionText.top
+        anchors.bottomMargin: 4
+        font.family: "Varela Round"
         font.pixelSize: 18
+        text: "monch"
+        color: Theme ? Theme.on_surface : "black"
     }
 
-    Button {
-      text: "click me"
-      anchors.centerIn: parent
+    Text {
+        id: versionText
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 8
+        font.family: "Varela Round"
+        font.pixelSize: 8
+        text: "v1.0"
+        color: Theme ? Theme.on_surface : "black"
     }
-
 }
