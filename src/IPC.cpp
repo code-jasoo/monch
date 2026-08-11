@@ -5,17 +5,27 @@
 
 HyprlandIPC::HyprlandIPC(QString socketPath)
     : _eventSocketPath(socketPath + "/.socket2.sock"),
-      _commandSocketPath(socketPath + "/socket.sock") {
+      _commandSocketPath(socketPath + "/.socket.sock") {
     _eventSocket.connectToServer(_eventSocketPath);
-    _commandSocket.connectToServer(_commandSocketPath);
-
+    // Connect event socket signal to callback
     QObject::connect(&_eventSocket, &QLocalSocket::readyRead, [this]() { _handleEvent(); });
+    // Connect command socket signal to callback
+    QObject::connect(&_commandSocket, &QLocalSocket::readyRead, [this]() { _responseData(); });
+    // Connect command exit signal to callback
+    QObject::connect(&_commandSocket, &QLocalSocket::disconnected, [this]() { _handleResponse(); });
 }
 
-void HyprlandIPC::writeCommand(QString command) { _commandSocket.write(command.toUtf8()); }
+void HyprlandIPC::writeCommand(QString command) {
+    _commandSocket.connectToServer(_commandSocketPath);
+    _commandSocket.write(command.toUtf8());
+}
 
 void HyprlandIPC::onEvent(std::function<void(const QByteArray&)> callback) {
     _eventCallback = callback;
+}
+
+void HyprlandIPC::onCommandResponse(std::function<void(const QByteArray&)> callback) {
+    _commandResponseCallback = callback;
 }
 
 void HyprlandIPC::_handleEvent() {
@@ -31,4 +41,11 @@ void HyprlandIPC::_handleEvent() {
         }
         newline = _eventBuffer.indexOf('\n');
     }
+}
+
+void HyprlandIPC::_responseData() { _responseBuffer += _commandSocket.readAll(); }
+
+void HyprlandIPC::_handleResponse() {
+    _commandResponseCallback(_responseBuffer);
+    _responseBuffer.clear();
 }

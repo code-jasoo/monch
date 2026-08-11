@@ -19,25 +19,42 @@ ApplicationWindow {
         anchors.margins: 8
         radius: 4
         color: Theme ? Theme.surface_container : "black"
-        Rectangle {
-            width: 160
-            height: 90
-            radius: 4
-            color: Theme ? Theme.surface_container_low : "black"
-            Text {
-                anchors.centerIn: parent
-                font.family: "Varela Round"
-                font.pixelSize: 12
-                text: "Monitor 1"
-                color: Theme ? Theme.on_surface : "black"
-            } 
-            MouseArea {
-                anchors.fill: parent
-                drag.target: parent
-                drag.minimumX: 0
-                drag.minimumY: 0
-                drag.maximumX: monitorsContainer.width - parent.width
-                drag.maximumY: monitorsContainer.height - parent.height
+        
+        Button {
+            anchors.centerIn: parent
+            text: "click me"
+            onClicked: {
+                Monitors.reloadMonitors();
+            }
+        }
+
+        Repeater {
+            model: Monitors
+
+            delegate: Rectangle {
+                width: (model.width / model.scale) / 10
+                height: (model.height / model.scale) / 10
+                x: model.x / 10
+                y: model.y / 10
+
+                color: Theme ? Theme.surface_container_low : "black"
+
+                Text {
+                    anchors.centerIn: parent
+                    font.family: "Varela Round"
+                    font.pixelSize: 12
+                    text: model.output
+                    color: Theme ? Theme.on_surface : "black"
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    drag.target: parent
+                    drag.minimumX: 0
+                    drag.minimumY: 0
+                    drag.maximumX: monitorsContainer.width - parent.width
+                    drag.maximumY: monitorsContainer.height - parent.height
+                }
             }
         }
     }

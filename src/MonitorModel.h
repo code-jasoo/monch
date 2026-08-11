@@ -16,6 +16,7 @@ class MonitorModel : public QAbstractListModel {
         HeightRole,
         XRole,
         YRole,
+        ScaleRole,
         NameRole,  // Monitor model name
         OutputRole // Output name like eDP-1
     };
@@ -24,7 +25,9 @@ class MonitorModel : public QAbstractListModel {
     QVariant data(const QModelIndex& index, int role) const;
     QHash<int, QByteArray> roleNames() const;
 
-    void reloadMonitors();
+    Q_INVOKABLE void reloadMonitors();
+  signals:
+    void monitorsChanged();
 
   private:
     QList<Monitor*> m_monitors;
@@ -34,5 +37,6 @@ class MonitorModel : public QAbstractListModel {
     QString socketPath = XDG_RUNTIME_DIR + "/hypr/" + HYPRLAND_INSTANCE;
 
     HyprlandIPC IPC;
-    void cb(const QByteArray& event);
+    void _onEvent(const QByteArray& event);
+    void _onResponse(const QByteArray& resp);
 };
