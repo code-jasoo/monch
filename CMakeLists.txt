@@ -1,5 +1,5 @@
 include(FetchContent) # Grab external libraries
-
+include(GNUInstallDirs)
 cmake_minimum_required(VERSION 3.16)
 
 project (monch VERSION 1.0.0 LANGUAGES CXX)
@@ -27,9 +27,13 @@ qt_add_executable(monch
 )
 
 qt_add_qml_module(monch
-  URI monched
+    URI Monch
   QML_FILES
   ui/Main.qml
+)
+
+set_target_properties(monch PROPERTIES
+    INSTALL_RPATH ""
 )
 
 target_link_libraries(monch PRIVATE
@@ -37,4 +41,16 @@ target_link_libraries(monch PRIVATE
   Qt6::Gui
   Qt6::Quick
   nlohmann_json::nlohmann_json
+)
+
+install(TARGETS monch
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(
+    DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Monch/"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/qt6/qml/Monch"
+    FILES_MATCHING
+        PATTERN "qmldir"
+        PATTERN "*.qmltypes"
 )

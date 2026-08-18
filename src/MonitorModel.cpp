@@ -88,3 +88,45 @@ QHash<int, QByteArray> MonitorModel::roleNames() const {
 }
 
 void MonitorModel::reloadMonitors() { IPC.writeCommand("j/monitors"); }
+
+QVariantList MonitorModel::values() const {
+    QVariantList result;
+    for (Monitor* m : m_monitors) {
+        result.append(QVariant::fromValue(m));
+    }
+    return result;
+}
+
+QRectF MonitorModel::bounds() const {
+    qreal mx1, my1, mx2, my2;
+
+    if (m_monitors.isEmpty()) {
+        return QRectF();
+    }
+
+    Monitor* mon = m_monitors[0];
+
+    mx1 = mon->x();
+    my1 = mon->y();
+    mx2 = mx1 + mon->width() / mon->scale();
+    my2 = my1 + mon->height() / mon->scale();
+
+    for (Monitor* m : m_monitors) {
+        if (!m) {
+            continue;
+        }
+        if (m->x() < mx1) {
+            mx1 = m->x();
+        }
+        if (m->y() < my1) {
+            my1 = m->y();
+        }
+        if (m->x() + m->width() / m->scale() > mx2) {
+            mx2 = m->x() + m->width() / m->scale();
+        }
+        if (m->y() + m->height() / m->scale() > my2) {
+            my2 = m->y() + m->height() / m->scale();
+        }
+    }
+    return QRectF(mx1, my1, mx2 - mx1, my2 - my1);
+}

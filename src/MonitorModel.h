@@ -1,6 +1,7 @@
 #include "IPC.h"
 #include "Monitor.h"
 #include <QAbstractListModel>
+#include <QRectF>
 #include <cstdlib>
 
 class MonitorModel : public QAbstractListModel {
@@ -25,6 +26,9 @@ class MonitorModel : public QAbstractListModel {
     QVariant data(const QModelIndex& index, int role) const;
     QHash<int, QByteArray> roleNames() const;
 
+    Q_PROPERTY(QVariantList values READ values NOTIFY monitorsChanged)
+    Q_PROPERTY(QRectF bounds READ bounds NOTIFY monitorsChanged)
+
     Q_INVOKABLE void reloadMonitors();
   signals:
     void monitorsChanged();
@@ -39,4 +43,7 @@ class MonitorModel : public QAbstractListModel {
     HyprlandIPC IPC;
     void _onEvent(const QByteArray& event);
     void _onResponse(const QByteArray& resp);
+
+    QVariantList values() const;
+    QRectF bounds() const;
 };

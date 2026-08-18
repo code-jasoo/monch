@@ -10,12 +10,14 @@ int main(int argc, char* argv[]) {
     QGuiApplication app(argc, argv);
     QQmlApplicationEngine engine;
 
+    engine.addImportPath(QCoreApplication::applicationDirPath() + "/../lib/qt6/qml");
+
     ThemeParser themeParser;
     MonitorModel monitorModel;
     QQmlContext* rootContext = engine.rootContext();
     rootContext->setContextProperty("Theme", &themeParser);
     rootContext->setContextProperty("Monitors", &monitorModel);
-    engine.loadFromModule("monched", "Main");
+    engine.loadFromModule("Monch", "Main");
 
     // Load monitors beforehand
     QTimer::singleShot(0, &monitorModel, &MonitorModel::reloadMonitors);
