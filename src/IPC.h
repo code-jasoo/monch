@@ -2,6 +2,7 @@
 
 #include <QLocalSocket>
 #include <QString>
+#include <queue>
 
 // Read socket2 (event) and write to socket (command)
 class HyprlandIPC {
@@ -30,4 +31,8 @@ class HyprlandIPC {
 
     void _responseData();
     void _handleResponse();
+
+    void _handleCommands();
+
+    std::queue<QString> _commandQueue;
 };

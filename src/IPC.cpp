@@ -1,7 +1,10 @@
 #include "IPC.h"
+#include <QDebug>
 #include <QLocalSocket>
 #include <QObject>
 #include <QString>
+#include <QTimer>
+#include <queue>
 
 HyprlandIPC::HyprlandIPC(QString socketPath)
     : _eventSocketPath(socketPath + "/.socket2.sock"),
@@ -12,12 +15,33 @@ HyprlandIPC::HyprlandIPC(QString socketPath)
     // Connect command socket signal to callback
     QObject::connect(&_commandSocket, &QLocalSocket::readyRead, [this]() { _responseData(); });
     // Connect command exit signal to callback
-    QObject::connect(&_commandSocket, &QLocalSocket::disconnected, [this]() { _handleResponse(); });
+    QObject::connect(&_commandSocket, &QLocalSocket::disconnected, [this]() {
+        _handleResponse();
+        if (_commandQueue.empty()) {
+            return;
+        }
+        qDebug() << "reconnecting...";
+        QTimer::singleShot(0, [this]() {
+            qDebug() << "connecting...";
+            _commandSocket.connectToServer(_commandSocketPath);
+        });
+    });
+
+    // When command socket is connected, run next command
+    QObject::connect(&_commandSocket, &QLocalSocket::connected, [this]() { _handleCommands(); });
 }
 
 void HyprlandIPC::writeCommand(QString command) {
-    _commandSocket.connectToServer(_commandSocketPath);
-    _commandSocket.write(command.toUtf8());
+    _commandQueue.push(command);
+    if (_commandSocket.state() == QLocalSocket::UnconnectedState) { // if socket is not connected
+        qDebug() << "asdad";
+        _commandSocket.connectToServer(_commandSocketPath); // and its doing nothing
+    }
+}
+
+void HyprlandIPC::_handleCommands() {
+    _commandSocket.write(_commandQueue.front().toUtf8());
+    _commandQueue.pop();
 }
 
 void HyprlandIPC::onEvent(std::function<void(const QByteArray&)> callback) {

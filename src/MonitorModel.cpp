@@ -5,6 +5,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
+#include <QTimer>
 
 MonitorModel::MonitorModel(QObject* parent) : QAbstractListModel(parent), IPC(socketPath) {
     IPC.onEvent([this](const QByteArray& event) { _onEvent(event); });
@@ -120,6 +121,14 @@ void MonitorModel::writeMonitors() {
     }
     qDebug() << cmd;
     IPC.writeCommand(cmd);
+    // NOTE: delay the reload by 100ms as hyprland doesnt configure monitors instantly.
+    // additionally the command response, "ok" seems to happen before the configuration
+    // so using that as an event to reload doesnt work + various other issues.
+    // for now this will do until i find some workaround
+    QTimer::singleShot(100, [this]() {
+        qDebug() << "reloading...";
+        reloadMonitors();
+    });
 }
 
 QVariantList MonitorModel::values() const {
