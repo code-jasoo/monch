@@ -47,6 +47,6 @@ class ThemeParser : public QObject {
     QString m_tertiary;
     QString m_error;
 
-    std::string themePath;
+    QString themePath;
     QFileSystemWatcher fileWatcher;
 };

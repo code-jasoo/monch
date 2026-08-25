@@ -1,41 +1,52 @@
 #include "ThemeParser.h"
 #include <QDebug>
+#include <QFile>
 #include <QFileSystemWatcher>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonValue>
 #include <cstdlib>
-#include <fstream>
-#include <nlohmann/json.hpp>
-#include <string>
-using json = nlohmann::json;
 
 ThemeParser::ThemeParser() {
-    const std::string HOME_DIR = std::getenv("HOME");
+    const QString HOME_DIR = std::getenv("HOME");
     themePath = HOME_DIR + "/.config/matugen/colors.json";
 
-    fileWatcher.addPath(QString::fromStdString(themePath));
+    fileWatcher.addPath(themePath);
     connect(&fileWatcher, &QFileSystemWatcher::fileChanged, this, &ThemeParser::reloadTheme);
     reloadTheme();
 }
 
 void ThemeParser::reloadTheme() {
-    std::ifstream f(themePath);
+    QFile file(themePath);
 
-    json themeData = json::parse(f);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qDebug() << "Unable to read file.";
+        return;
+    }
 
-    m_surface = QString::fromStdString(themeData["surface"]);
-    m_surface_container = QString::fromStdString(themeData["surface_container"]);
-    m_surface_container_lowest = QString::fromStdString(themeData["surface_container_lowest"]);
-    m_surface_container_low = QString::fromStdString(themeData["surface_container_low"]);
-    m_surface_container_high = QString::fromStdString(themeData["surface_container_high"]);
-    m_surface_dim = QString::fromStdString(themeData["surface_dim"]);
-    m_on_surface = QString::fromStdString(themeData["on_surface"]);
-    m_on_surface_variant = QString::fromStdString(themeData["on_surface_variant"]);
-    m_outline = QString::fromStdString(themeData["outline"]);
-    m_outline_variant = QString::fromStdString(themeData["outline_variant"]);
-    m_primary = QString::fromStdString(themeData["primary"]);
-    m_secondary = QString::fromStdString(themeData["secondary"]);
-    m_tertiary = QString::fromStdString(themeData["tertiary"]);
-    m_error = QString::fromStdString(themeData["error"]);
-    m_surface_container_highest = QString::fromStdString(themeData["surface_container_highest"]);
+    QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+    if (!doc.isObject()) {
+        return;
+    }
+
+    QJsonObject themeData = doc.object();
+
+    m_surface = themeData["surface"].toString();
+    m_surface_container = themeData["surface_container"].toString();
+    m_surface_container_lowest = themeData["surface_container_lowest"].toString();
+    m_surface_container_low = themeData["surface_container_low"].toString();
+    m_surface_container_high = themeData["surface_container_high"].toString();
+    m_surface_dim = themeData["surface_dim"].toString();
+    m_on_surface = themeData["on_surface"].toString();
+    m_on_surface_variant = themeData["on_surface_variant"].toString();
+    m_outline = themeData["outline"].toString();
+    m_outline_variant = themeData["outline_variant"].toString();
+    m_primary = themeData["primary"].toString();
+    m_secondary = themeData["secondary"].toString();
+    m_tertiary = themeData["tertiary"].toString();
+    m_error = themeData["error"].toString();
+    m_surface_container_highest = themeData["surface_container_highest"].toString();
 
     emit themeChanged();
 }
