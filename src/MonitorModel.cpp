@@ -89,6 +89,39 @@ QHash<int, QByteArray> MonitorModel::roleNames() const {
 
 void MonitorModel::reloadMonitors() { IPC.writeCommand("j/monitors"); }
 
+void MonitorModel::queueMonitor(QString id, int x, int y, int width, int height, int scale) {
+    /*
+    QString cmd = QString("eval 'hl.monitor({ output = \"%1\", mode = \"%2x%3@60\", "
+                          "position = \"%4x%5\", scale = \"%6\"})'")
+                      .arg(id)
+                      .arg(x)
+                      .arg(y)
+                      .arg(width)
+                      .arg(height)
+                      .arg(scale);
+    */
+
+    QString cmd = QString("keyword monitor %1,%2x%3@60,%4x%5,%6")
+                      .arg(id)
+                      .arg(width)
+                      .arg(height)
+                      .arg(x)
+                      .arg(y)
+                      .arg(scale);
+
+    qDebug() << cmd;
+    monitorQueue[id] = cmd;
+}
+
+void MonitorModel::writeMonitors() {
+    QString cmd = "[[BATCH]]";
+    for (const auto& [key, value] : monitorQueue) {
+        cmd += value + ";";
+    }
+    qDebug() << cmd;
+    IPC.writeCommand(cmd);
+}
+
 QVariantList MonitorModel::values() const {
     QVariantList result;
     for (Monitor* m : m_monitors) {

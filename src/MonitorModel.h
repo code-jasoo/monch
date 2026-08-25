@@ -3,6 +3,7 @@
 #include <QAbstractListModel>
 #include <QRectF>
 #include <cstdlib>
+#include <map>
 
 class MonitorModel : public QAbstractListModel {
     Q_OBJECT
@@ -30,6 +31,8 @@ class MonitorModel : public QAbstractListModel {
     Q_PROPERTY(QRectF bounds READ bounds NOTIFY monitorsChanged)
 
     Q_INVOKABLE void reloadMonitors();
+    Q_INVOKABLE void queueMonitor(QString id, int x, int y, int width, int height, int scale);
+    Q_INVOKABLE void writeMonitors();
   signals:
     void monitorsChanged();
 
@@ -46,4 +49,6 @@ class MonitorModel : public QAbstractListModel {
 
     QVariantList values() const;
     QRectF bounds() const;
+
+    std::map<QString, QString> monitorQueue;
 };

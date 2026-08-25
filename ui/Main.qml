@@ -15,14 +15,21 @@ ApplicationWindow {
         anchors.top: parent.top
         anchors.right: parent.right
         anchors.left: parent.left
-        anchors.bottom: parent.bottom //monchText.top
+        anchors.bottom: settingsField.top //parent.bottom //monchText.top
         anchors.margins: 8
         radius: 4
         color: Theme ? Theme.surface_container : "black"
 
+        property double globalScale: 5
+
         property rect boundRect: Monitors ? Monitors.bounds : Qt.rect(0, 0, 0, 0)
-        property double xOffset: monitorsContainer.width / 2 - (boundRect.x + boundRect.width / 2) / 10
-        property double yOffset: monitorsContainer.height / 2 - (boundRect.y + boundRect.height / 2) / 10
+        property double xOffset: monitorsContainer.width / 2 - (boundRect.x + boundRect.width / 2) / globalScale
+        property double yOffset: monitorsContainer.height / 2 - (boundRect.y + boundRect.height / 2) / globalScale
+        
+        property var selected: null
+        property var originMonitor: null        // actual model data
+        property var originMonitorRect: null    // the representing visual rect
+
         Button {
             anchors.centerIn: parent
             text: "click me"
@@ -52,13 +59,44 @@ ApplicationWindow {
             }
 
             delegate: Rectangle {
+
+                id: rectDelegate
+
+                property int scale: model.scale
+                property string output: model.output
+
+                property int futureX: 0
+                property int futureY: 0
+                property int futureScale: model.scale
+                property int actualWidth: model.width
+                property int actualHeight: model.height
                 
-                width: (model.width / model.scale) / 10
-                height: (model.height / model.scale) / 10
-                x: (model.x / 10) + monitorsContainer.xOffset
-                y: (model.y / 10) + monitorsContainer.yOffset
+                width: (model.width / futureScale) / monitorsContainer.globalScale
+                height: (model.height / futureScale) / monitorsContainer.globalScale
+                x: (model.x / monitorsContainer.globalScale) + monitorsContainer.xOffset
+                y: (model.y / monitorsContainer.globalScale) + monitorsContainer.yOffset
+
+                
 
                 color: Theme ? Theme.surface_container_lowest : "black"
+
+                Component.onCompleted: {
+                    if (model.x == 0 && model.y == 0) {
+                        monitorsContainer.originMonitor = model
+                        monitorsContainer.originMonitorRect = rectDelegate
+                    }
+
+                    futureX = model.x
+                    futureY = model.y
+                    futureScale = model.scale
+                }
+
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 150
+                        easing.type: Easing.InOutQuad
+                    }
+                }
 
                 function getSnapPoints() {
                     return [
@@ -89,13 +127,23 @@ ApplicationWindow {
                     drag.maximumX: monitorsContainer.width - parent.width
                     drag.maximumY: monitorsContainer.height - parent.height
 
+                    onClicked: {
+                        monitorsContainer.selected = rectDelegate
+                        parent.color = Theme ? Theme.surface_container_high : "black"
+                        for (var i = 0; i < monitorsRepeater.count; i++) {
+                            var mon = monitorsRepeater.itemAt(i)
+                            if (parent == mon) { continue; }
+                            mon.color = Theme ? Theme.surface_container_lowest : "black"
+                        }
+                    }
+
                     onPositionChanged: {
                         // Overlap checking and position snapping
                         // x==x==x
                         // |     |
                         // x     x
                         // |     |
-                        // x==x==x
+                        // x==x==x  
                         
                         for (var i = 0; i < monitorsRepeater.count; i++) {
                             var child = monitorsRepeater.itemAt(i);
@@ -134,9 +182,133 @@ ApplicationWindow {
 
                             
                         }
+                        
+                        // debug out the actual positions in the virtual space
+                        var originMon = monitorsContainer.originMonitorRect
+                        var x = (rectDelegate.x * monitorsContainer.globalScale) - (originMon.x * monitorsContainer.globalScale)
+                        var y = (rectDelegate.y * monitorsContainer.globalScale) - (originMon.y * monitorsContainer.globalScale) 
+
+                        rectDelegate.futureX = x
+                        rectDelegate.futureY = y
+
+                        console.log("(" + futureX + "," + futureY + ")")
                     }
 
                 }
+            }
+        }
+    }
+
+    Row {
+        id: settingsField
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.leftMargin: 16
+        anchors.bottomMargin: 8
+        height: 30
+        z: 100
+        
+        Text {
+            id: xText
+            text: "x: "
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: parent.left
+            font.family: "Varela Round"
+            font.pixelSize: 12
+            color: Theme ? Theme.on_surface : "black"
+        }
+
+        TextField {
+            id: xBox
+            anchors.left: xText.right
+            anchors.verticalCenter: scaleText.verticalCenter
+            text: monitorsContainer.selected ? monitorsContainer.selected.futureX : 0
+
+            implicitWidth: 100
+            implicitHeight: 20
+        }
+
+        Text {
+            id: yText
+            text: "y: "
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: xBox.right
+            font.family: "Varela Round"
+            font.pixelSize: 12
+            color: Theme ? Theme.on_surface : "black"
+        }
+
+        TextField {
+            id: yBox
+            anchors.left: yText.right
+            anchors.verticalCenter: yText.verticalCenter
+            text: monitorsContainer.selected ? monitorsContainer.selected.futureY : 0
+
+            implicitWidth: 100
+            implicitHeight: 20
+        }
+        
+        Text {
+            id: scaleText
+            text: "Scale: "
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: yBox.right
+            font.family: "Varela Round"
+            font.pixelSize: 12
+            color: Theme ? Theme.on_surface : "black"
+        }
+
+        SpinBox {
+            id: scaleBox
+            anchors.left: scaleText.right
+            anchors.verticalCenter: scaleText.verticalCenter
+            value: monitorsContainer.selected ? monitorsContainer.selected.futureScale : 0
+            from: 0
+            to: 4
+
+            onValueModified: {
+                if (monitorsContainer.selected) {
+                    monitorsContainer.selected.futureScale = value
+                }
+            }
+
+            implicitWidth: 40
+            implicitHeight: 20
+        }
+
+        Text {
+            id: originText
+            text: "Origin: "
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: scaleBox.right
+            font.family: "Varela Round"
+            font.pixelSize: 12
+            color: Theme ? Theme.on_surface : "black"
+        }
+
+        CheckBox {
+            id: originChkBox
+            anchors.left: originText.right
+            anchors.verticalCenter: originText.verticalCenter
+            checked: monitorsContainer.selected ? (monitorsContainer.selected.futureX == 0 && monitorsContainer.selected.futureY == 0) : false
+        }
+
+        Button {
+            // TODO clean up ui and fix visual glitches
+            // TODO also maybe refactor ui code because this jawn is fried
+            id: applyBtn
+            anchors.left: originChkBox.right
+            anchors.verticalCenter: parent.verticalCenter
+            text: "Apply"
+
+            onClicked: {
+                console.log("Applying display settings")
+                for (var i = 0; i < monitorsRepeater.count; i++) {
+                    var mon = monitorsRepeater.itemAt(i);
+                    Monitors.queueMonitor(mon.output, mon.futureX, mon.futureY, mon.actualWidth, mon.actualHeight, mon.futureScale);
+                } 
+                Monitors.writeMonitors();
             }
         }
     }
